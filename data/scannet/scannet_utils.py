@@ -125,6 +125,7 @@ def get_labels(filename,IDs):
     remapper = np.ones(150) * (-100)
     for i, x in enumerate(IDs):
         remapper[x] = i
+    import pdb; pdb.set_trace()
     sem_labels = remapper[np.array(f.elements[0]['label'])]
 
     return sem_labels

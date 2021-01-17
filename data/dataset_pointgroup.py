@@ -71,21 +71,21 @@ class Dataset:
 
 
     def valLoader(self):
-        val_file_names = sorted(list(set([data["scene_id"] for data in self.val_data])))
+        self.val_file_names = sorted(list(set([data["scene_id"] for data in self.val_data])))
         #self.val_file_names = list(map(lambda data: os.path.join(self.data_root,self.dataset,'{}_pointgroup.pth'.format(data[' scene_id'])),val_file_names))
         #val_file_names = sorted(glob.glob(os.path.join(self.data_root, self.dataset, 'val', '*' + self.filename_suffix)))
         #self.val_files = [torch.load(i) for i in val_file_names]
 
-        logger.info('Validation on {} object samples from {} scenes.'.format(len(self.val_data),len(val_file_names)))
+        logger.info('Validation on {} object samples from {} scenes.'.format(len(self.val_data),len(self.val_file_names)))
 
         val_set = list(range(len(self.val_data)))
-        self.val_data_loader = DataLoader(val_set, batch_size=self.batch_size, collate_fn=self.valMerge, num_workers=self.val_workers,
+        self.val_data_loader = DataLoader(val_set, batch_size=1, collate_fn=self.valMerge, num_workers=0,
                                           shuffle=False, drop_last=False, pin_memory=True)
 
 
     def testLoader(self):
         self.test_file_names = sorted([line.rstrip() for line in open(os.path.join(self.data_root,'meta_data/scannetv2_test.txt'))])
-        self.test_file_names = list(map(lambda name: os.path.join(self.data_root,self.dataset,'{}_pointgroup.pth'.format(name)),test_file_names))
+        self.test_file_names = list(map(lambda name: os.path.join(self.data_root,self.dataset,'{}_pointgroup.pth'.format(name)),self.test_file_names))
         #self.test_file_names = sorted(glob.glob(os.path.join(self.data_root, self.dataset, self.test_split, '*' + self.filename_suffix)))
         self.test_files = [torch.load(i) for i in self.test_file_names]
 
@@ -168,6 +168,7 @@ class Dataset:
         full_scale = np.array([self.full_scale[1]] * 3)
         room_range = xyz.max(0) - xyz.min(0)
         while (valid_idxs.sum() > self.max_npoint):
+            np.random.seed(0)
             offset = np.clip(full_scale - room_range + 0.001, None, 0) * np.random.rand(3)
             xyz_offset = xyz + offset
             valid_idxs = (xyz_offset.min(1) >= 0) * ((xyz_offset < full_scale).sum(1) == 3)
@@ -366,12 +367,12 @@ class Dataset:
             locs_float.append(torch.from_numpy(xyz_middle))
             
             feat = torch.from_numpy(rgb) + torch.randn(3) * 0.1
+
             if self.use_multiview:
                 pid = mp.current_process().pid
                 if pid not in self.multiview_data:
                     self.multiview_data[pid] = h5py.File(os.path.join(self.data_root,self.dataset,'enet_feats_maxpool.hdf5'), "r", libver="latest")
-
-                multiview = torch.from_numpy(self.multiview_data[pid][scene_id][valid_idxs])
+                multiview = torch.from_numpy(self.multiview_data[pid][scene_id][:])[valid_idxs]
                 feat = torch.cat([feat,multiview],1)
 
             feats.append(feat)
@@ -466,13 +467,13 @@ class Dataset:
             xyz -= xyz.min(0)
 
             ### crop
-            xyz, valid_idxs = self.crop(xyz)
+            # xyz, valid_idxs = self.crop(xyz)
 
-            xyz_middle = xyz_middle[valid_idxs]
-            xyz = xyz[valid_idxs]
-            rgb = rgb[valid_idxs]
-            label = label[valid_idxs]
-            instance_label = self.getCroppedInstLabel(instance_label, valid_idxs)
+            # xyz_middle = xyz_middle[valid_idxs]
+            # xyz = xyz[valid_idxs]
+            # rgb = rgb[valid_idxs]
+            # label = label[valid_idxs]
+            # instance_label = self.getCroppedInstLabel(instance_label, valid_idxs)
 
             ### get instance information
             inst_num, inst_infos = self.getInstanceInfo(xyz_middle, instance_label.astype(np.int32))
@@ -496,7 +497,7 @@ class Dataset:
                 if pid not in self.multiview_data:
                     self.multiview_data[pid] = h5py.File(os.path.join(self.data_root,self.dataset,'enet_feats_maxpool.hdf5'), "r", libver="latest")
 
-                multiview = torch.from_numpy(self.multiview_data[pid][scene_id][valid_idxs])
+                multiview = torch.from_numpy(self.multiview_data[pid][scene_id][:])
                 feat = torch.cat([feat,multiview],1)
 
             feats.append(feat)
