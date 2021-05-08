@@ -1,5 +1,5 @@
-# Scan-and-Tell
-This is the repository for the ADL4CV 2020 course at TUM. The goal of the project is to compare VoteNet and PointGroup as object detection backbones for the 3D dense captioning task.
+# Scan-and-Tell [[Report](https://github.com/Barsovich/Scan-and-Tell/blob/main/report.pdf)]
+This is the repository for the [Scan and Tell](https://github.com/Barsovich/Scan-and-Tell/blob/main/report.pdf) project. The goal of the project is to improve the state-of-the-art 3D Dense Captioning architecture using sparse convolutions.
 
 ## Installation
 
@@ -144,6 +144,9 @@ If you use the same configuration file as the config parameter, it will automati
 ```shell
 python eval_votenet.py --config config/votenet_eval_args.yaml
 ```
+
+## Branches
+The `main` should be used for all steps. The `rg` branch is currently experimental and aims to utilize a graph message passing network to further improve the results.
 
 ## Acknowledgement
 This repository uses the PointGroup implementation from https://github.com/Jia-Research-Lab/PointGroup and the VoteNet implementation from https://github.com/daveredrum/ScanRefer. We would like to thank Dave Z. Chen and Jia-Research-Lab for their implementations.
